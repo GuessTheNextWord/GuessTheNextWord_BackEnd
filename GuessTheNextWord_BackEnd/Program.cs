@@ -1,4 +1,6 @@
 
+using GuessTheNextWord_BackEnd.Services;
+
 namespace GuessTheNextWord_BackEnd
 {
     public class Program
@@ -7,10 +9,19 @@ namespace GuessTheNextWord_BackEnd
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+            builder.Services.AddDbContext<Data.AppDbContext>();
+
+            builder.Services.AddScoped<Repositories.Interfaces.IGameRepository, Repositories.GameRepository>();
+            builder.Services.AddScoped<Repositories.Interfaces.IPlayerRepository, Repositories.PlayerRepository>();
+            builder.Services.AddScoped<Repositories.Interfaces.IGamePlayersRepository, Repositories.GamePlayerRepository>();
+            builder.Services.AddScoped<Repositories.Interfaces.IWordRepository, Repositories.WordRepository>();
+            builder.Services.AddSingleton<WordLookUp>();
+
+            WordLookUp.LoadWords(
+                @"D:\GuessTheNextWord\GuessTheNextWord_BackEnd\GuessTheNextWord_BackEnd\bin\Debug\net8.0\words_alpha.txt");
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
