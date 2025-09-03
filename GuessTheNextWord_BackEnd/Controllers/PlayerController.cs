@@ -1,4 +1,5 @@
 ﻿using GuessTheNextWord_BackEnd.DTOs.PlayerDTOs;
+using GuessTheNextWord_BackEnd.Models;
 using GuessTheNextWord_BackEnd.Models.Enums;
 using GuessTheNextWord_BackEnd.Repositories.Interfaces;
 using GuessTheNextWord_BackEnd.Services;
@@ -10,15 +11,16 @@ namespace GuessTheNextWord_BackEnd.Controllers
     {
         private readonly IGameRepository _gameRepository;
         private readonly IPlayerRepository _playerRepository;
-        private readonly IWordRepository _wordRepository;
+        private readonly IGameWordRepository _gameWordRepository;
         private readonly IGamePlayersRepository _gamePlayersRepository;
-        public PlayerController(IGameRepository gameRepository, IPlayerRepository playerRepository, IWordRepository wordRepository, IGamePlayersRepository gamePlayersRepository, WordLookUp wordLookUp)
+        public PlayerController(IGameRepository gameRepository, IPlayerRepository playerRepository, IGameWordRepository gameWordRepository, IGamePlayersRepository gamePlayersRepository, WordLookUp wordLookUp)
         {
             _gameRepository = gameRepository;
             _playerRepository = playerRepository;
-            _wordRepository = wordRepository;
+            _gameWordRepository = gameWordRepository;
             _gamePlayersRepository = gamePlayersRepository;
-            
+            WordLookUp.LoadWords(
+                @"D:\GuessTheNextWord\GuessTheNextWord_BackEnd\GuessTheNextWord_BackEnd\bin\Debug\net8.0\words_alpha.txt");
         }
         [HttpGet("button-pressed")]
         public async Task<IActionResult> ButtonPressed(ButtonPressedPlayerRequest bpRequest)
@@ -37,38 +39,49 @@ namespace GuessTheNextWord_BackEnd.Controllers
                 return NotFound("Game not found");
             }
 
+            var gameId = game.Id;
+
             if (bpRequest.SecondsLimit > 30)
             {
                 await _playerRepository.UpdatePlayerStateByIdAsync(player.Id, PlayerState.Lost);
-                if (await _gameRepository.IsOnePlayerLeft(game.Id))
+                if (await _gameRepository.IsOnePlayerLeft(gameId))
                 {
-                    return RedirectToAction("EndGame", "Game",new {gameId = game.Id});
+                    return RedirectToAction("EndGame", "Game",new {gameId = gameId});
                 }
                 return BadRequest("You took too long to answer, you are disqualified from this game");
             }
-    
-            if (string.IsNullOrEmpty(bpRequest.Word))
+
+            var bpRequestWord = bpRequest.Word;
+
+            if (string.IsNullOrEmpty(bpRequestWord))
             {
                 return BadRequest("Empty word");
             }
 
-           
+            if (!WordLookUp.IsValidWord(bpRequestWord))
+            {
+                return BadRequest("Word does not exist");
+            }
 
-            if (_wordRepository.CheckIfWordAlreadyTaken(bpRequest.Word).Result)
+            if (_gameRepository.HasGameAnyWords(gameId))
             {
-                return BadRequest("WordAlreadyTaken");
-            }
-            else
-            {
-                if (!WordLookUp.IsValidWord(bpRequest.Word))
+                if (_gameWordRepository.GetLastWordSaidInTheGame(gameId).Text[^1] != bpRequestWord[0])
                 {
-                    return BadRequest("Word does not exist");
+                    return BadRequest("The current word should start with the ending character of the previous word");
                 }
-                else
+
+                if (_gameWordRepository.CheckIfWordAlreadyTaken(bpRequestWord, gameId))
                 {
-                    await _wordRepository.AddWordAsync(bpRequest.Word);
+                    return BadRequest("WordAlreadyTaken");
                 }
             }
+
+            var gameWord = new GameWord
+            {
+                Game = game,
+                Word = new Word { Text = bpRequestWord }
+            };
+            await _gameWordRepository.AddWordAsync(gameWord);
 
             return Ok();
         }

@@ -36,5 +36,10 @@ namespace GuessTheNextWord_BackEnd.Repositories
             game.State = state;
             return dbContext.SaveChangesAsync();
         }
+
+        public bool HasGameAnyWords(int gameId)
+        {
+            return dbContext.Games.Include(g => g.Words).Any(g => g.Id == gameId && g.Words.Any());
+        }
     }
 }

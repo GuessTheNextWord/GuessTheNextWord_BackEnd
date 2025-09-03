@@ -16,11 +16,10 @@ namespace GuessTheNextWord_BackEnd
             builder.Services.AddScoped<Repositories.Interfaces.IGameRepository, Repositories.GameRepository>();
             builder.Services.AddScoped<Repositories.Interfaces.IPlayerRepository, Repositories.PlayerRepository>();
             builder.Services.AddScoped<Repositories.Interfaces.IGamePlayersRepository, Repositories.GamePlayerRepository>();
-            builder.Services.AddScoped<Repositories.Interfaces.IWordRepository, Repositories.WordRepository>();
+            builder.Services.AddScoped<Repositories.Interfaces.IGameWordRepository, Repositories.GameWordRepository>();
             builder.Services.AddSingleton<WordLookUp>();
 
-            WordLookUp.LoadWords(
-                @"D:\GuessTheNextWord\GuessTheNextWord_BackEnd\GuessTheNextWord_BackEnd\bin\Debug\net8.0\words_alpha.txt");
+          
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();

@@ -8,6 +8,7 @@ namespace GuessTheNextWord_BackEnd.Repositories.Interfaces
         Task<Game> GetGameByIdAsync(int gameId);
         Task<bool> IsOnePlayerLeft(int gameId);
         Task UpdateGameStateByIdAsync(int gameId, Models.Enums.GameState state);
+        bool HasGameAnyWords(int gameId);
 
     }
 }
